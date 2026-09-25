@@ -2,31 +2,41 @@ name: Epic Games Free Alert
 
 on:
   schedule:
-    - cron: '0 */6 * * *'   # every 6 hours — lineup only changes weekly, no need for tighter polling
+    - cron: '0 */6 * * *'
   workflow_dispatch: {}
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   check-epic:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
+
+      - uses: actions/cache/restore@v4
+        with:
+          path: state/epic_alert_state.json
+          key: epic-alert-state
+          restore-keys: |
+            epic-alert-state
+
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+
       - run: pip install -r requirements.txt
+
       - name: Run Epic Games alert check
         env:
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           EPIC_GAMES_CHAT_IDS: ${{ secrets.EPIC_GAMES_CHAT_IDS }}
         run: python scripts/epic_alert.py
-      - name: Commit updated state
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add state/epic_alert_state.json
-          git diff --cached --quiet || git commit -m "Update Epic Games alert state [skip ci]"
-          git push
+
+      - name: Save Epic alert state
+        uses: actions/cache/save@v4
+        with:
+          path: state/epic_alert_state.json
+          key: epic-alert-state-${{ github.run_id }}
