@@ -20,7 +20,6 @@ from telegram.ext import (
 )
 
 from commands import load_all, COMMAND_HANDLERS
-from commands.today import today_callback
 
 
 load_dotenv()
