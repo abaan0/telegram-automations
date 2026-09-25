@@ -15,7 +15,6 @@ from telegram.error import TelegramError
 from telegram.ext import (
     Application,
     CommandHandler,
-    CallbackQueryHandler,
     ContextTypes,
 )
 
@@ -188,15 +187,6 @@ def main():
                 handler_func,
             )
         )
-
-
-    # /today selection buttons
-    app.add_handler(
-        CallbackQueryHandler(
-            today_callback,
-            pattern=r"^today_select:\d+$",
-        )
-    )
 
 
     app.add_error_handler(
