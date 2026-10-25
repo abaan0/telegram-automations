@@ -2,7 +2,7 @@ name: Epic Games Free Alert
 
 on:
   schedule:
-    - cron: '0 */6 * * *'   # every 6 hours — lineup only changes weekly, no need for tighter polling
+    - cron: '0 0 * * *'  # every day at midnight UTC
   workflow_dispatch: {}
 
 permissions:
