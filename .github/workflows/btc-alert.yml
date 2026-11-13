@@ -5,8 +5,14 @@ on:
     - cron: '*/15 * * * *'
   workflow_dispatch: {}
 
+# The workflow needs permission to commit the updated JSON state.
 permissions:
-  contents: read
+  contents: write
+
+# Only one BTC check can run at a time, including manually triggered checks.
+concurrency:
+  group: btc-price-alert
+  cancel-in-progress: false
 
 jobs:
   check-btc:
@@ -14,14 +20,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-
-      - name: Restore BTC alert state
-        uses: actions/cache@v4
         with:
-          path: state/btc_alert_state.json
-          key: btc-alert-state-${{ github.run_id }}
-          restore-keys: |
-            btc-alert-state-
+          persist-credentials: true
 
       - uses: actions/setup-python@v5
         with:
@@ -34,5 +34,33 @@ jobs:
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           COINGECKO_API_KEY: ${{ secrets.COINGECKO_API_KEY }}
-
         run: python scripts/btc_alert.py
+
+      - name: Save BTC alert timestamp to GitHub
+        # The Python script modifies this file only after Telegram accepts an alert.
+        run: |
+          if git diff --quiet -- state/btc_alert_state.json; then
+            echo "No BTC alert state changes."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add state/btc_alert_state.json
+          git commit -m "Save BTC alert timestamp [skip ci]"
+
+          # Another workflow may commit to main while this one is running.
+          # Rebase onto the latest main branch instead of overwriting changes.
+          for attempt in 1 2 3; do
+            if git push origin HEAD:"${GITHUB_REF_NAME}"; then
+              echo "BTC alert timestamp saved."
+              exit 0
+            fi
+
+            echo "Push attempt $attempt failed. Fetching latest changes..."
+            git fetch origin "${GITHUB_REF_NAME}"
+            git rebase "origin/${GITHUB_REF_NAME}"
+          done
+
+          echo "ERROR: Could not save BTC alert timestamp to GitHub." >&2
+          exit 1
