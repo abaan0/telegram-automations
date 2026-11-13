@@ -1,536 +1,247 @@
 <a id="readme-top"></a>
 
-<!-- PROJECT SHIELDS -->
-[![Contributors][contributors-shield]][contributors-url]
-[![Forks][forks-shield]][forks-url]
-[![Stargazers][stars-shield]][stars-url]
-[![Issues][issues-shield]][issues-url]
-[![MIT License][license-shield]][license-url]
-[![LinkedIn][linkedin-shield]][https://www.linkedin.com/in/abaan9350/]
-
-<!-- PROJECT LOGO -->
-<br />
 <div align="center">
-  <a href="https://github.com/Abaan9350/telegram-automations">
-    <img src="images/logo.png" alt="Logo" width="80" height="80">
-  </a>
 
-  <h3 align="center">Telegram Automations 🤖</h3>
+# Telegram Automations
 
-  <p align="center">
-    A personal automation hub powered by Telegram and AI.
-    <br />
-    Discover historical events, monitor crypto, get free game alerts, and more—all through Telegram.
-    <br />
-    <br />
-    <a href="https://github.com/Abaan9350/telegram-automations">View Repository</a>
-    &middot;
-    <a href="https://github.com/Abaan9350/telegram-automations/issues">Report Bug</a>
-    &middot;
-    <a href="https://github.com/Abaan9350/telegram-automations/issues">Request Feature</a>
-  </p>
+**A modular Python Telegram bot for Bitcoin monitoring, free-game discovery, and automated notifications.**
+
+[![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![Telegram](https://img.shields.io/badge/Telegram-Bot-26A5E4?logo=telegram&logoColor=white)](https://core.telegram.org/bots/api)
+[![GitHub Actions](https://img.shields.io/badge/GitHub-Actions-2088FF?logo=githubactions&logoColor=white)](https://github.com/features/actions)
+[![Issues](https://img.shields.io/github/issues/abaan0/telegram-automations)](https://github.com/abaan0/telegram-automations/issues)
+[![Stars](https://img.shields.io/github/stars/abaan0/telegram-automations)](https://github.com/abaan0/telegram-automations/stargazers)
+
+[Repository](https://github.com/abaan0/telegram-automations) · [Report a bug](https://github.com/abaan0/telegram-automations/issues/new) · [Request a feature](https://github.com/abaan0/telegram-automations/issues/new)
+
 </div>
 
-<!-- TABLE OF CONTENTS -->
-<details>
-  <summary>Table of Contents</summary>
-  <ol>
-    <li>
-      <a href="#about-the-project">About The Project</a>
-      <ul>
-        <li><a href="#key-features">Key Features</a></li>
-        <li><a href="#built-with">Built With</a></li>
-      </ul>
-    </li>
-    <li>
-      <a href="#getting-started">Getting Started</a>
-      <ul>
-        <li><a href="#prerequisites">Prerequisites</a></li>
-        <li><a href="#installation">Installation</a></li>
-        <li><a href="#configuration">Configuration</a></li>
-      </ul>
-    </li>
-    <li><a href="#features">Features</a>
-      <ul>
-        <li><a href="#telegram-commands">Telegram Commands</a></li>
-        <li><a href="#automated-alerts">Automated Alerts</a></li>
-      </ul>
-    </li>
-    <li><a href="#project-structure">Project Structure</a></li>
-    <li><a href="#deployment">Deployment</a></li>
-    <li><a href="#roadmap">Roadmap</a></li>
-    <li><a href="#contributing">Contributing</a></li>
-    <li><a href="#license">License</a></li>
-    <li><a href="#contact">Contact</a></li>
-  </ol>
-</details>
+## Overview
 
-<!-- ABOUT THE PROJECT -->
-## About The Project
+Telegram Automations combines on-demand bot commands with scheduled GitHub Actions checks. The Telegram bot supports polling during local development and webhooks when deployed to Render.
 
-Telegram Automations is a personal Python-based automation platform built around the Telegram Bot API and powered by Google Gemini AI.
+**Main capabilities**
 
-The goal is simple: instead of opening different applications or manually repeating everyday tasks, access useful tools and automations directly through Telegram—from tracking expenses to discovering fascinating historical events curated by AI.
+- Check Bitcoin's current USD price and 24-hour change with `/btcprice`.
+- Receive Bitcoin alerts when the absolute 24-hour change reaches the configured threshold.
+- Discover Epic Games and Steam free-game promotions, on demand or through scheduled notifications.
+- Retrieve the daily Wordle answer with `/wordleanswer`.
+- Keep a SQLite user registry and allow admins to inspect it with `/users`.
+- Extend commands through a decorator-based registry in `commands/`.
 
-The project follows a modular architecture, making it easy to add new commands, services, and automations without affecting existing functionality.
+A historical-events and Gemini-powered `/today` command is **still present in the repository**, although it is considered legacy and was previously marked for removal. See [Known limitations](#known-limitations).
 
-### Key Features
+## Telegram commands
 
-- 🤖 **Telegram Bot** - Natural language interface for all automations
-- 🧠 **AI-Powered Content** - Google Gemini ranks and generates social media content
-- 📅 **Historical Events** - Discover interesting events from "this day in history"
-- ₿ **Bitcoin Monitoring** - Real-time price tracking and automated alerts
-- 🎮 **Free Game Alerts** - Automated notifications for Epic Games and Steam
-- 🎬 **Multi-Source Events** - Sports, music, movies, TV, gaming, and Wikipedia
-- ⏰ **GitHub Actions** - Scheduled workflows for automated monitoring
-- ☁️ **Cloud Deployment** - Production-ready on Render
-- 🧩 **Modular Architecture** - Easy to extend and customize
+| Command | What it does |
+| --- | --- |
+| `/btcprice` | Returns Bitcoin's USD price and 24-hour percentage change from CoinGecko. |
+| `/epicgames` | Lists Epic Games titles with active free promotions and claim links. |
+| `/steamgames` | Lists 100%-discounted Steam games and their claim links. |
+| `/wordleanswer` | Returns the current Wordle answer. |
+| `/users` | Lists recorded bot users; restricted to `ADMIN_ID`. |
+| `/today` (legacy) | Uses historical-event sources and Gemini to select events and draft social-media posts; still registered in the current code. |
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+## Scheduled alerts
 
-<!-- BUILT WITH -->
+Scheduled checks run independently of the Render web service, using GitHub Actions.
 
-### Built With
+| Workflow | Schedule (UTC) | Behavior |
+| --- | --- | --- |
+| [BTC Price Alert](.github/workflows/btc-alert.yml) | Every 15 minutes | Alerts if the absolute 24-hour BTC price change reaches **3%** and the 24-hour cooldown has elapsed. |
+| [Epic Games Free Alert](.github/workflows/epic-alert.yml) | Daily at 00:00 UTC (05:30 IST) | Checks for changes to the set of currently free Epic Games titles. |
+| [Steam Free Game Alert](.github/workflows/steam-alert.yml) | Every 6 hours | Looks for newly detected 100%-discounted Steam games. |
 
-* [![Python][Python-badge]][Python-url]
-* [![Telegram][Telegram-badge]][Telegram-url]
-* [![Google Gemini][Gemini-badge]][Gemini-url]
-* [![GitHub Actions][GitHubActions-badge]][GitHubActions-url]
-* [![Render][Render-badge]][Render-url]
+All three workflows also support manual triggering through the **Actions** tab. A manual run sends a test confirmation message and performs the regular check; it does not bypass the BTC cooldown for price alerts.
 
-**Core Technologies:**
-* Python 3.12
-* python-telegram-bot (async)
-* Google Gemini API
-* Starlette & Uvicorn (webhook server)
-* HTTPX (async HTTP client)
-* aiosqlite (async database)
+### Bitcoin alert persistence
 
-**External APIs:**
-* Wikipedia / Wikimedia REST API
-* TheSportsDB
-* MusicBrainz
-* TMDB (The Movie Database)
-* IGDB (Internet Game Database)
-* CoinGecko API
+The BTC workflow uses `scripts/config.py` for its threshold (`BTC_ALERT_THRESHOLD = 3.0`). Its behavior is:
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+1. Check the CoinGecko 24-hour percentage change every 15 minutes.
+2. Send a price alert only when the threshold has been crossed **and** at least 24 hours have passed since the previous successful price alert.
+3. Record the successful alert timestamp in `state/btc_alert_state.json`.
+4. Commit the updated state to the repository using GitHub Actions, so the timestamp survives subsequent workflow runs.
+5. Use workflow concurrency to avoid overlapping BTC checks.
 
-<!-- GETTING STARTED -->
+The timestamp is written after Telegram accepts the alert request. Repository write permission is needed for the automatic state commit. If the commit fails, subsequent checks may not have the latest cooldown state, so review failed workflow runs.
 
-## Getting Started
+### Free-game alerts and expiry dates
 
-Follow these steps to set up and run the project locally.
+- **Epic Games:** The scheduled script compares the current game titles with `state/epic_alert_state.json`, then sends a notification when the list changes. Its latest code is intended to display the promotion's **expiry date and time in IST**, when Epic provides an end date.
+- **Steam:** The workflow checks for new free-to-keep games using Steam app IDs, and includes the original price and game link when available. It saves its state through GitHub Actions cache.
 
-### Prerequisites
+**Important:** The current GitHub repository does not contain the shared `scripts/epic_games.py` module imported by the updated Epic alert script and its tests. Until that module is added, the Epic scheduled workflow will fail. The `/epicgames` bot command still uses the older parser and does not yet show expiry dates. See [Known limitations](#known-limitations).
 
-Before running the project, ensure you have:
+## Tech stack
 
-* **Python 3.10 or later** (Python 3.12 recommended)
-* **A Telegram account**
-* **A Telegram bot** created using [@BotFather](https://t.me/botfather)
-* **Git**
-* **API Keys** (depending on features you want to use):
-  - Google Gemini API key (for `/today` command)
-  - CoinGecko API key (for Bitcoin tracking)
-  - TMDB API token (optional, for movies/TV)
-  - IGDB credentials (optional, for gaming)
+- **Python 3.12**, `python-telegram-bot`, `httpx`, `python-dotenv`
+- **Starlette and Uvicorn** for webhook mode
+- **SQLite and aiosqlite** for user tracking
+- **GitHub Actions** for scheduled monitoring
+- **Render** for bot hosting
+- **CoinGecko, Epic Games Store, and Steam** as external data sources
+- **Google Gemini and additional event APIs** for the legacy `/today` feature
 
-### Installation
+## Getting started
 
-1. **Clone the repository**
+### Requirements
 
-   ```sh
-   git clone https://github.com/Abaan9350/telegram-automations.git
-   cd telegram-automations
-   ```
+- Python 3.12 recommended
+- Git
+- A Telegram bot created using [@BotFather](https://t.me/BotFather)
+- The bot token and your Telegram user ID
 
-2. **Install dependencies**
+### Install on Windows (PowerShell)
 
-   ```sh
-   pip install -r requirements.txt
-   ```
-
-3. **Set up environment variables**
-
-   Copy the example file and configure your credentials:
-
-   ```sh
-   cp .env.example .env
-   ```
-
-   Edit `.env` with your actual values. See [Configuration](#configuration) for details.
-
-4. **Run the bot**
-
-   For local development (polling mode):
-
-   ```sh
-   python bot.py
-   ```
-
-   For production (webhook mode), set `RENDER=true` in your `.env` file.
-
-> ⚠️ **Security Warning**: Never commit your `.env` file, API keys, or private credentials to GitHub.
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-### Configuration
-
-The project uses environment variables for configuration. See `.env.example` for a complete list of available options.
-
-#### Required Variables
-
-```env
-# Core bot configuration
-BOT_TOKEN=your_bot_token_from_botfather
-ADMIN_ID=your_telegram_user_id
+```powershell
+git clone https://github.com/abaan0/telegram-automations.git
+cd telegram-automations
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+Copy-Item .env.example .env
 ```
 
-#### Optional Variables (by feature)
+Edit `.env` with your own credentials. **For local polling, remove or comment out `RENDER=true` from the copied `.env` file.** The program selects webhook mode whenever `RENDER` has a nonempty value.
 
-**For `/today` command:**
-```env
-GEMINI_API_KEY=your_gemini_api_key
-GEMINI_MODEL=gemini-3.5-flash-lite
-SPORTSDB_API_KEY=123
-TMDB_API_TOKEN=your_tmdb_token
-IGDB_CLIENT_ID=your_igdb_client_id
-IGDB_CLIENT_SECRET=your_igdb_client_secret
-TIMEZONE=Asia/Kolkata
-```
+Start the bot:
 
-**For Bitcoin tracking:**
-```env
-COINGECKO_API_KEY=your_coingecko_api_key
-TELEGRAM_CHAT_ID=your_chat_id
-```
-
-**For free game alerts:**
-```env
-EPIC_GAMES_CHAT_IDS=123456789,987654321
-STEAM_GAMES_CHAT_IDS=123456789,987654321
-```
-
-**For production deployment:**
-```env
-WEBHOOK_BASE_URL=https://your-app.onrender.com
-WEBHOOK_SECRET=your_random_secret
-PORT=10000
-RENDER=true
-```
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-<!-- FEATURES -->
-
-## Features
-
-### Telegram Commands
-
-| Command         | Description                                                                 |
-| --------------- | --------------------------------------------------------------------------- |
-| `/today`        | 🔥 Discover interesting historical events from "this day in history"       |
-| `/btcprice`     | ₿ Get current Bitcoin price and 24-hour percentage change                  |
-| `/epicgames`    | 🎮 List currently free games on Epic Games Store                           |
-| `/steamgames`   | 🎮 List currently free games on Steam                                      |
-| `/wordleanswer` | 🟩 Get today's Wordle answer                                               |
-| `/users`        | 👥 Display registered bot users (admin only)                               |
-
-### `/today` - AI-Powered Historical Events
-
-The flagship feature of this bot. Powered by Google Gemini AI, it discovers and ranks fascinating historical events.
-
-**How it works:**
-
-1. **Search** - Fetches events from multiple sources:
-   - Wikipedia (general historical events)
-   - TheSportsDB (sports history)
-   - MusicBrainz (album releases)
-   - TMDB (movie and TV premieres)
-   - IGDB (video game releases)
-
-2. **AI Ranking** - Gemini analyzes all candidates and selects the 3 most interesting events based on:
-   - Social media potential
-   - Category diversity (Sports, Music, Gaming, Technology, etc.)
-   - Cultural significance
-   - Storytelling value
-
-3. **Content Generation** - For your selected event, Gemini generates:
-   - A ready-to-post Twitter/X thread
-   - A Reddit post with title, body, and suggested subreddit
-   - Downloaded image from the source
-
-4. **Social Media Ready** - Copy the generated content and post manually to your social media accounts.
-
-**Example Usage:**
-
-```
-User: /today
-Bot: 🔎 Searching today's historical events...
-Bot: 🔎 Found 47 historical candidates.
-     🧠 Gemini is choosing the three most interesting ones...
-Bot: [Shows 3 top events with selection buttons]
-User: [Selects event #2]
-Bot: [Generates Twitter post, Reddit post, and downloads image]
-```
-
-### Automated Alerts
-
-The bot includes GitHub Actions workflows that run on a schedule to monitor various services:
-
-| Alert Type              | Schedule        | Description                                                     |
-| ----------------------- | --------------- | --------------------------------------------------------------- |
-| **Bitcoin Price**       | Every 6 hours   | Alert when BTC moves ±1% in 24 hours (configurable threshold)  |
-| **Epic Games**          | Twice daily     | Notify when new free games are available                        |
-| **Steam Games**         | Twice daily     | Notify when new free-to-keep games appear                       |
-
-All alerts include:
-- 24-hour cooldown to prevent spam
-- State persistence between runs
-- Manual workflow trigger for testing
-- Configurable recipient lists
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-<!-- PROJECT STRUCTURE -->
-
-## Project Structure
-
-```text
-telegram-automations/
-│
-├── .github/
-│   └── workflows/              # GitHub Actions scheduled jobs
-│       ├── btc-alert.yml       # Bitcoin price monitoring
-│       ├── epic-alert.yml      # Epic Games monitoring
-│       └── steam-alert.yml     # Steam games monitoring
-│
-├── commands/                   # Telegram bot commands
-│   ├── __init__.py             # Command registry
-│   ├── btcprice.py             # Bitcoin price command
-│   ├── epicgames.py            # Epic Games command
-│   ├── steamgames.py           # Steam games command
-│   ├── today.py                # Historical events command
-│   ├── users.py                # User management
-│   └── wordleanswer.py         # Wordle answer
-│
-├── services/                   # Shared service modules
-│   ├── __init__.py
-│   ├── gemini.py               # Google Gemini AI integration
-│   ├── historical_events.py    # Wikipedia API integration
-│   ├── additional_sources.py   # Sports, music, movies, gaming APIs
-│   ├── content_generator.py    # Social media content generation
-│   └── media.py                # Image downloading
-│
-├── scripts/                    # GitHub Actions scripts
-│   ├── config.py               # Shared configuration
-│   ├── btc_alert.py            # Bitcoin alert script
-│   ├── epic_alert.py           # Epic Games alert script
-│   └── steam_alert.py          # Steam games alert script
-│
-├── state/                      # Alert state persistence
-│   ├── btc_alert_state.json
-│   ├── epic_alert_state.json
-│   └── steam_alert_state.json
-│
-├── credentials/                # Service account credentials (gitignored)
-│   └── google-service-account.json
-│
-├── .env.example                # Environment variable template
-├── bot.py                      # Main bot entry point
-├── notify.py                   # Admin notifications
-├── users.py                    # User database management
-├── users.db                    # SQLite user database
-├── render.yaml                 # Render deployment config
-├── requirements.txt            # Python dependencies
-└── README.md
-```
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-<!-- DEPLOYMENT -->
-
-## Deployment
-
-The project is designed for cloud deployment with minimal configuration.
-
-### Render (Recommended)
-
-The bot runs continuously on [Render](https://render.com/) using the included `render.yaml` configuration.
-
-**Setup:**
-
-1. Fork this repository
-2. Connect your GitHub account to Render
-3. Create a new Web Service from your fork
-4. Add environment variables in the Render dashboard
-5. Deploy
-
-The bot automatically switches to webhook mode when `RENDER=true` is set.
-
-### GitHub Actions
-
-Scheduled alerts run via GitHub Actions workflows:
-
-1. Add repository secrets:
-   - `BOT_TOKEN`
-   - `COINGECKO_API_KEY`
-   - `TELEGRAM_CHAT_ID`
-   - `EPIC_GAMES_CHAT_IDS`
-   - `STEAM_GAMES_CHAT_IDS`
-
-2. Enable GitHub Actions in your repository settings
-
-3. Workflows run automatically on schedule:
-   - Bitcoin: Every 6 hours
-   - Epic Games: 6 AM & 6 PM UTC
-   - Steam: 6 AM & 6 PM UTC
-
-### Local Development
-
-For testing, run in polling mode (no webhook required):
-
-```sh
-# Don't set RENDER variable
+```powershell
 python bot.py
 ```
 
-The bot polls Telegram's servers for updates instead of listening for webhooks.
+Do not run polling and the deployed webhook bot with the same token simultaneously, since they can interfere with each other's Telegram update handling.
 
-### Uptime Monitoring
+### Configuration
 
-Optional: Use [UptimeRobot](https://uptimerobot.com/) to ping your `/health` endpoint and prevent Render's free tier from sleeping.
+| Variable | Used for | Notes |
+| --- | --- | --- |
+| `BOT_TOKEN` | Bot and alerts | Telegram token from BotFather; required. |
+| `ADMIN_ID` | Bot | Telegram user ID authorized to run `/users`; required. |
+| `RENDER` | Bot | Set to `true` to enable webhook mode; **unset** for local polling. |
+| `WEBHOOK_BASE_URL` | Webhook | Public HTTPS base URL, without a trailing slash. |
+| `WEBHOOK_SECRET` | Webhook | Set a strong random secret so webhook requests can be checked. |
+| `PORT` | Webhook | Defaults to `10000`. |
+| `TELEGRAM_CHAT_ID` | BTC alert | Destination chat ID for the price alert. |
+| `COINGECKO_API_KEY` | BTC alert | Required by the current `scripts/config.py` for scheduled checks. |
+| `EPIC_GAMES_CHAT_IDS` | Epic alert | Comma-separated destination chat IDs. |
+| `STEAM_GAMES_CHAT_IDS` | Steam alert | Comma-separated destination chat IDs. |
+| `GEMINI_API_KEY`, `GEMINI_MODEL` | Legacy `/today` | Needed for Gemini-powered event ranking/content. |
+| `SPORTSDB_API_KEY`, `TMDB_API_TOKEN`, `IGDB_CLIENT_ID`, `IGDB_CLIENT_SECRET`, `TIMEZONE` | Legacy `/today` | Optional event-source and timezone settings. |
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+Use [.env.example](.env.example) as a starting point. Never commit `.env`, access tokens, API keys, or service-account credentials.
 
-<!-- ROADMAP -->
+## Deployment
+
+### Render: Telegram bot
+
+The repository includes [`render.yaml`](render.yaml) for a free-plan web service.
+
+1. Connect the repository to Render and create a web service using `render.yaml`.
+2. Configure `BOT_TOKEN`, `ADMIN_ID`, `RENDER=true`, `WEBHOOK_BASE_URL`, and `WEBHOOK_SECRET` in the Render environment. Set any other keys required by the commands you use.
+3. Deploy and verify that `https://YOUR-SERVICE.onrender.com/health` returns `OK`.
+4. Use a **secret** webhook token and treat the bot token as private. The current implementation includes the bot token in its webhook URL and startup logging, so limit log access.
+
+The `/health` route supports monitoring. External monitors such as cron-job.org can periodically check it, but uptime on a free hosting plan is not guaranteed.
+
+### GitHub Actions: scheduled alerts
+
+1. Open **Repository → Settings → Secrets and variables → Actions**.
+2. Add the appropriate repository secrets: `BOT_TOKEN`, `COINGECKO_API_KEY`, `TELEGRAM_CHAT_ID`, `EPIC_GAMES_CHAT_IDS`, and `STEAM_GAMES_CHAT_IDS`.
+3. Open **Settings → Actions → General → Workflow permissions** and enable **Read and write permissions** (subject to repository policy). The BTC and Epic workflows need `contents: write` to commit updated state.
+4. Open **Actions** and manually run a workflow to check its output. A manual run sends a test confirmation to the configured recipient(s).
+
+Schedules use **UTC**, and GitHub Actions may start scheduled runs later than the nominal cron time.
+
+## Project structure
+
+```text
+telegram-automations/
+├── .github/workflows/
+│   ├── btc-alert.yml          # BTC checks and Git state commits
+│   ├── epic-alert.yml         # Epic Games scheduled checks
+│   └── steam-alert.yml        # Steam scheduled checks
+├── commands/
+│   ├── __init__.py            # Command registration and discovery
+│   ├── btcprice.py
+│   ├── epicgames.py
+│   ├── steamgames.py
+│   ├── today.py               # Legacy command, still present
+│   ├── users.py
+│   └── wordleanswer.py
+├── scripts/
+│   ├── btc_alert.py
+│   ├── config.py              # BTC threshold and shared settings
+│   ├── epic_alert.py
+│   └── steam_alert.py
+├── services/                  # AI, historical events and Sheets helpers
+├── state/
+│   ├── btc_alert_state.json
+│   ├── epic_alert_state.json
+│   └── steam_alert_state.json
+├── tests/
+│   └── test_epic_games.py
+├── bot.py                      # Polling / webhook entry point
+├── notify.py
+├── users.py                   # SQLite user tracking
+├── users.db
+├── .env.example
+├── render.yaml
+├── requirements.txt
+└── README.md
+```
+
+The expected shared file `scripts/epic_games.py` is **missing from the current GitHub tree**. It is required for the intended Epic expiry feature.
+
+## Testing
+
+Run the existing unit tests from the repository root:
+
+```powershell
+python -m unittest discover -s tests -v
+```
+
+The Epic expiry tests will not import successfully until `scripts/epic_games.py` is added. No live Telegram messages should be sent by these unit tests.
+
+## Known limitations
+
+- **Epic expiry feature is not fully integrated:** `scripts/epic_alert.py` and `tests/test_epic_games.py` import a missing `scripts/epic_games.py` helper. The current `/epicgames` command still shows links without expiry times.
+- **Legacy `/today` code remains:** Both `commands/today.py` and its callback registration in `bot.py` still exist. Remove both when retiring that feature.
+- **Steam alert state uses Actions cache:** Unlike BTC state, it is not committed to the repository and can be lost or restored inconsistently.
+- **BTC state commits depend on Actions permissions:** A failed push can leave the stored cooldown timestamp out of date.
+- **Webhook security can be strengthened:** `WEBHOOK_SECRET` is optional in the current code, and the bot token is included in the webhook path and startup log. Configure the secret and restrict access to logs.
 
 ## Roadmap
 
-### ✅ Completed
-
-* [x] Telegram Bot with webhook and polling support
-* [x] Bitcoin price tracking and alerts
-* [x] Epic Games free game notifications
-* [x] Steam free game notifications
-* [x] Google Sheets expense tracker
-* [x] User management system
-* [x] **AI-powered historical events discovery** 🆕
-* [x] **Multi-source event aggregation** (Wikipedia, Sports, Music, Movies, Gaming) 🆕
-* [x] **Google Gemini integration for content generation** 🆕
-* [x] **Social media post generation** (Twitter, Reddit) 🆕
-* [x] Render cloud deployment
-* [x] GitHub Actions automation
-* [x] Async/await architecture
-* [x] SQLite database for user tracking
-
-### 🚧 In Progress
-
-* [ ] Enhanced error handling and retry logic
-* [ ] Improved logging and monitoring
-* [ ] Unit and integration tests
-
-### 📋 Planned
-
-* [ ] Weather updates and forecasts
-* [ ] News summaries with AI analysis
-* [ ] More personal productivity tools
-* [ ] Home automation integration (Home Assistant)
-* [ ] Docker containerization
-* [ ] Raspberry Pi deployment guide
-* [ ] Web dashboard for analytics
-* [ ] Multi-user support with permissions
-* [ ] Database migration to PostgreSQL
-* [ ] Automated social media posting (optional)
-
-See the [open issues](https://github.com/Abaan9350/telegram-automations/issues) for a full list of proposed features and known issues.
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-<!-- CONTRIBUTING -->
+- [x] Telegram commands for BTC, Epic Games, Steam and Wordle
+- [x] Scheduled BTC monitoring with a 24-hour alert cooldown
+- [x] BTC state commits and non-overlapping BTC workflow runs
+- [x] Scheduled Epic Games and Steam checks
+- [x] SQLite-backed user tracking with an admin command
+- [x] Render webhook deployment and `/health` endpoint
+- [x] Initial unit tests for Epic promotion parsing (currently blocked by a missing module)
+- [ ] Restore the Epic expiry helper and use it in both the workflow and `/epicgames`
+- [ ] Remove the deprecated `/today` feature if no longer wanted
+- [ ] Make Steam state persistence more reliable
+- [ ] Add integration tests and improve workflow error handling
+- [ ] Add optional per-user notification preferences
 
 ## Contributing
 
-This is primarily a personal automation platform, but contributions, suggestions, and improvements are welcome!
-
-If you have an idea for a new automation or feature:
-
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-**Contribution Ideas:**
-- New Telegram commands
-- Additional data sources for `/today`
-- New alert types
-- Bug fixes and optimizations
-- Documentation improvements
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-<!-- LICENSE -->
+Suggestions and pull requests are welcome. Open an [issue](https://github.com/abaan0/telegram-automations/issues) for bugs or ideas. For a code contribution, create a feature branch, make changes, test them, then open a pull request against `main`.
 
 ## License
 
-Distributed under the MIT License. See `LICENSE.txt` for more information.
+No license file is currently present in this repository. A license must be added before claiming that the project is MIT-licensed or otherwise openly licensed for reuse.
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+## Links
 
-<!-- CONTACT -->
+- [GitHub repository](https://github.com/abaan0/telegram-automations)
+- [Issue tracker](https://github.com/abaan0/telegram-automations/issues)
+- [Telegram Bot API](https://core.telegram.org/bots/api)
+- [CoinGecko](https://www.coingecko.com/)
+- [Epic Games Store](https://store.epicgames.com/en-US/free-games)
+- [Steam](https://store.steampowered.com/)
 
-## Contact
-
-Abdurrahman - [@Abaan9350](https://github.com/Abaan9350) - [abaan9350@gmail.com](mailto:abaan9350@gmail.com)
-
-Project Link: [https://github.com/Abaan9350/telegram-automations](https://github.com/Abaan9350/telegram-automations)
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-<!-- ACKNOWLEDGMENTS -->
-
-## Acknowledgments
-
-This project integrates with several excellent APIs and services:
-
-* [Telegram Bot API](https://core.telegram.org/bots/api)
-* [Google Gemini AI](https://ai.google.dev/)
-* [Wikipedia / Wikimedia REST API](https://www.mediawiki.org/wiki/API:REST_API)
-* [TheSportsDB](https://www.thesportsdb.com/)
-* [MusicBrainz](https://musicbrainz.org/)
-* [TMDB](https://www.themoviedb.org/)
-* [IGDB](https://www.igdb.com/)
-* [CoinGecko](https://www.coingecko.com/)
-* [Epic Games Store](https://www.epicgames.com/store/)
-* [Steam](https://store.steampowered.com/)
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-<!-- MARKDOWN LINKS & IMAGES -->
-
-[contributors-shield]: https://img.shields.io/github/contributors/Abaan9350/telegram-automations.svg?style=for-the-badge
-[contributors-url]: https://github.com/Abaan9350/telegram-automations/graphs/contributors
-[forks-shield]: https://img.shields.io/github/forks/Abaan9350/telegram-automations.svg?style=for-the-badge
-[forks-url]: https://github.com/Abaan9350/telegram-automations/network/members
-[stars-shield]: https://img.shields.io/github/stars/Abaan9350/telegram-automations.svg?style=for-the-badge
-[stars-url]: https://github.com/Abaan9350/telegram-automations/stargazers
-[issues-shield]: https://img.shields.io/github/issues/Abaan9350/telegram-automations.svg?style=for-the-badge
-[issues-url]: https://github.com/Abaan9350/telegram-automations/issues
-[license-shield]: https://img.shields.io/github/license/Abaan9350/telegram-automations.svg?style=for-the-badge
-[license-url]: https://github.com/Abaan9350/telegram-automations/blob/main/LICENSE.txt
-[linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555
-[linkedin-url]: https://www.linkedin.com/in/abaan9350/
-[Python-badge]: https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white
-[Python-url]: https://www.python.org/
-[Telegram-badge]: https://img.shields.io/badge/Telegram-26A5E4?style=for-the-badge&logo=telegram&logoColor=white
-[Telegram-url]: https://telegram.org/
-[Gemini-badge]: https://img.shields.io/badge/Google%20Gemini-8E75B2?style=for-the-badge&logo=googlegemini&logoColor=white
-[Gemini-url]: https://ai.google.dev/
-[GoogleSheets-badge]: https://img.shields.io/badge/Google%20Sheets-34A853?style=for-the-badge&logo=googlesheets&logoColor=white
-[GoogleSheets-url]: https://www.google.com/sheets/about/
-[GitHubActions-badge]: https://img.shields.io/badge/GitHub%20Actions-2088FF?style=for-the-badge&logo=github-actions&logoColor=white
-[GitHubActions-url]: https://github.com/features/actions
-[Render-badge]: https://img.shields.io/badge/Render-46E3B7?style=for-the-badge&logo=render&logoColor=white
-[Render-url]: https://render.com/
+<p align="right">(<a href="#readme-top">Back to top</a>)</p>
